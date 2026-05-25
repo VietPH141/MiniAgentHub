@@ -1,0 +1,166 @@
+.app-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--text);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: var(--text-h);
+}
+
+.app-header p {
+  margin: 4px 0 0;
+  color: var(--text);
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
+}
+
+.form-panel label,
+.form-panel .switch-label {
+  display: block;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.form-panel input,
+.form-panel select {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  background: #fff;
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-button,
+.clear-button,
+.small-button,
+.action-cell button {
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.clear-button,
+.small-button,
+.action-cell button:nth-child(2) {
+  background: #333;
+}
+
+.action-cell button {
+  margin-right: 8px;
+}
+
+.submit-button:hover,
+.clear-button:hover,
+.small-button:hover,
+.action-cell button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) 1fr;
+  gap: 20px;
+}
+
+.list-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f7f6fd;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  color: var(--text-h);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.action-cell {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.message {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  font-weight: 600;
+}
+
+.message-error {
+  background: #ffebee;
+  color: #b00020;
+}
+
+.message-success {
+  background: #effaf4;
+  color: #1f7a3f;
+}
+
+@media (max-width: 900px) {
+  .layout-grid {
+    grid-template-columns: 1fr;
+  }
+}

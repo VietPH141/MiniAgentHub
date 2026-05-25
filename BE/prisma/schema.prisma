@@ -1,0 +1,77 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  users       User[]       // Quan hệ 1-N: Một Role có nhiều User
+  permissions Permission[] @relation("RolePermissions") // Quan hệ N-N với Permission
+}
+
+model Permission {
+  id             String   @id @default(uuid())
+  permissionKey  String   @unique
+  description    String?
+  roles          Role[]   @relation("RolePermissions")  // N-N với Role
+  groups         Group[]  @relation("GroupPermissions") // N-N với Group
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String?
+  isActive     Boolean  @default(true)
+  isFirstLogin Boolean  @default(true)
+  refreshToken String?
+  
+  roleId       String
+  role         Role     @relation(fields: [roleId], references: [id])
+  
+  groups       Group[]  @relation("UserGroups")
+  
+  conversations Conversation[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Group {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  users       User[]       @relation("UserGroups")    // N-N với User
+  permissions Permission[] @relation("GroupPermissions") // N-N với Permission
+  createdAt   DateTime     @default(now())
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  title     String?
+  aiModel   String   // Lưu model AI đã chọn
+  
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 6. Tin nhắn chi tiết
+model Message {
+  id             String       @id @default(uuid())
+  role           String       // system, user, assistant
+  content        String       @db.Text
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  
+  createdAt      DateTime     @default(now())
+}
