@@ -1,3 +1,9 @@
+export interface AuthSignUpInput {
+  email: string;
+  password: string;
+  fullName?: string | null;
+}
+
 export interface AuthLoginInput {
   email: string;
   password: string;
@@ -8,4 +14,18 @@ export interface AuthResponse {
   refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: string;
+  user: {
+    id: number;
+    email: string;
+    fullName: string | null;
+  };
+}
+
+export interface AccessTokenPayload {
+  sub: string;
+  email: string;
+}
+
+export interface RefreshTokenPayload {
+  sub: string;
 }

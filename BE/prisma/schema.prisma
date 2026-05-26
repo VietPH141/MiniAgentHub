@@ -6,72 +6,121 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Role {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  description String?
-  users       User[]       // Quan hệ 1-N: Một Role có nhiều User
-  permissions Permission[] @relation("RolePermissions") // Quan hệ N-N với Permission
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
 }
 
-model Permission {
-  id             String   @id @default(uuid())
-  permissionKey  String   @unique
-  description    String?
-  roles          Role[]   @relation("RolePermissions")  // N-N với Role
-  groups         Group[]  @relation("GroupPermissions") // N-N với Group
+enum Theme {
+  LIGHT
+  DARK
+}
+
+enum Language {
+  VI
+  EN
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
   passwordHash String
   fullName     String?
-  isActive     Boolean  @default(true)
-  isFirstLogin Boolean  @default(true)
-  refreshToken String?
+  phoneNumber  String?
+  address      String?
+  avatarUrl    String?
   
-  roleId       String
-  role         Role     @relation(fields: [roleId], references: [id])
+  theme        Theme     @default(DARK)
+  language     Language  @default(VI)
   
-  groups       Group[]  @relation("UserGroups")
-  
-  conversations Conversation[]
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  conversations Conversation[]
+  userGroups    UserGroup[]
+
+  @@map("users")
 }
 
 model Group {
-  id          String       @id @default(uuid())
-  name        String
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
   description String?
-  users       User[]       @relation("UserGroups")    // N-N với User
-  permissions Permission[] @relation("GroupPermissions") // N-N với Permission
-  createdAt   DateTime     @default(now())
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Quan hệ
+  userGroups       UserGroup[]
+  groupPermissions GroupPermission[]
+
+  @@map("groups")
+}
+
+model UserGroup {
+  userId  Int @map("user_id")
+  groupId Int @map("group_id")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@map("user_groups")
+}
+
+model Permission {
+  id            Int      @id @default(autoincrement())
+  permissionKey String   @unique @map("permission_key")
+  entity        String?
+  description   String?
+
+  groupPermissions GroupPermission[]
+
+  @@map("permissions")
+}
+
+model GroupPermission {
+  groupId      Int @map("group_id")
+  permissionId Int @map("permission_id")
+
+  group      Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, permissionId])
+  @@map("group_permissions")
 }
 
 model Conversation {
-  id        String   @id @default(uuid())
-  title     String?
-  aiModel   String   // Lưu model AI đã chọn
+  id          Int       @id @default(autoincrement())
+  ownerId     Int       @map("owner_id")
+  title       String?
   
-  ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id])
-  
-  messages  Message[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  modelConfig String?   @map("model_config") 
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@map("conversations")
 }
 
-// 6. Tin nhắn chi tiết
 model Message {
-  id             String       @id @default(uuid())
-  role           String       // system, user, assistant
-  content        String       @db.Text
+  id             Int         @id @default(autoincrement())
+  conversationId Int         @map("conversation_id")
+  role           MessageRole @default(USER)
+  content        String      @db.Text
   
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  
-  createdAt      DateTime     @default(now())
+  responseTime   Float?      @map("response_time") 
+
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  deletedAt      DateTime?   @map("deleted_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }

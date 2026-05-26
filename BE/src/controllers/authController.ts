@@ -1,6 +1,34 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/authService';
-import type { AuthLoginInput } from '../types/auth';
+import type { AuthLoginInput, AuthSignUpInput } from '../types/auth';
+
+export async function signup(req: Request, res: Response) {
+  const { email, password, fullName } = req.body as AuthSignUpInput;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'email and password are required' });
+  }
+
+  try {
+    const result = await authService.signUpUser({ email, password, fullName });
+    return res.status(201).json(result);
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to create account' });
+  }
+}
+
+export async function refresh(req: Request, res: Response) {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(400).json({ error: 'Refresh token is required' });
+
+  const result = await authService.refreshAccessToken(refreshToken);
+  if (!result) return res.status(401).json({ error: 'Invalid refresh token' });
+
+  res.json(result);
+}
 
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body as AuthLoginInput;
@@ -14,28 +42,4 @@ export async function login(req: Request, res: Response) {
   }
 
   res.json(result);
-}
-
-export async function refresh(req: Request, res: Response) {
-  const { refreshToken } = req.body;
-  if (!refreshToken || typeof refreshToken !== 'string') {
-    return res.status(400).json({ error: 'refreshToken is required' });
-  }
-
-  const result = await authService.refreshToken(refreshToken);
-  if (!result) {
-    return res.status(401).json({ error: 'Invalid refresh token' });
-  }
-
-  res.json(result);
-}
-
-export async function logout(req: Request, res: Response) {
-  const { userId } = req.body;
-  if (!userId || typeof userId !== 'string') {
-    return res.status(400).json({ error: 'userId is required' });
-  }
-
-  await authService.logoutUser(userId);
-  res.status(204).end();
 }

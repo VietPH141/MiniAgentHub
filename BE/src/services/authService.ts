@@ -1,13 +1,16 @@
 import { randomBytes, pbkdf2Sync, timingSafeEqual } from 'crypto';
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { prisma } from '../db';
-import type { AuthLoginInput } from '../types/auth';
+import type { AuthLoginInput, AuthSignUpInput, AuthResponse , AccessTokenPayload , RefreshTokenPayload } from '../types/auth';
 import type { User } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'default-secret';
-const JWT_EXPIRE = process.env.JWT_EXPIRE ?? '15m';
-const JWT_REFRESH_EXPIRE = process.env.JWT_REFRESH_EXPIRE ?? '30d';
+const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
+const JWT_EXPIRE = process.env.JWT_EXPIRE || '15m';
+
 const JWT_SECRET_KEY: Secret = JWT_SECRET;
+
+const REFRESH_SECRET = process.env.REFRESH_SECRET || 'refresh-secret-key';
+const REFRESH_EXPIRE = process.env.REFRESH_EXPIRE || '7d';
 
 const jwtSignOptions: SignOptions = {
   expiresIn: JWT_EXPIRE as unknown as SignOptions['expiresIn'],
@@ -29,55 +32,91 @@ function verifyPassword(password: string, passwordHash: string) {
   return timingSafeEqual(hashedBuffer, derivedBuffer);
 }
 
-function generateAccessToken(user: User) {
-  return jwt.sign(
-    {
-      sub: user.id,
-      email: user.email,
-      roleId: user.roleId,
-    },
+function generateTokens(user: { id: number; email: string }) {
+  const accessPayload: AccessTokenPayload = {
+    sub: user.id.toString(),
+    email: user.email,
+  };
+
+  const refreshPayload: RefreshTokenPayload = {
+    sub: user.id.toString(),
+  };
+
+  const accessToken = jwt.sign(
+    accessPayload,
     JWT_SECRET_KEY,
     jwtSignOptions
   );
+
+  const refreshToken = jwt.sign(
+    refreshPayload,
+    REFRESH_SECRET,
+    {
+      expiresIn: REFRESH_EXPIRE as SignOptions['expiresIn'],
+    }
+  );
+
+  return { accessToken, refreshToken };
 }
 
-function generateRefreshToken() {
-  return randomBytes(64).toString('hex');
+export async function refreshAccessToken(token: string) {
+  try {
+    const payload = jwt.verify(
+      token,
+      REFRESH_SECRET
+    ) as RefreshTokenPayload;
+
+    const userId = Number(payload.sub);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.isActive) return null;
+
+    return generateTokens(user);
+  } catch (e) {
+    return null;
+  }
 }
 
-export async function loginUser(payload: AuthLoginInput) {
+export async function signUpUser(payload: AuthSignUpInput): Promise<AuthResponse> {
+  const passwordHash = hashPassword(payload.password);
+  const user = await prisma.user.create({
+    data: {
+      email: payload.email,
+      passwordHash,
+      fullName: payload.fullName ?? null,
+    },
+  });
+
+  const tokens = generateTokens(user);
+
+  return {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    tokenType: 'Bearer',
+    expiresIn: JWT_EXPIRE,
+    user: {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+    },
+  };
+}
+
+export async function loginUser(payload: AuthLoginInput): Promise<AuthResponse | null> {
   const user = await prisma.user.findUnique({ where: { email: payload.email } });
   if (!user) return null;
   if (!verifyPassword(payload.password, user.passwordHash)) return null;
   if (!user.isActive) return null;
 
-  const refreshToken = generateRefreshToken();
-  await prisma.user.update({ where: { id: user.id }, data: { refreshToken } });
-
+  const { accessToken, refreshToken } = generateTokens(user);
   return {
-    accessToken: generateAccessToken(user),
-    refreshToken,
-    tokenType: 'Bearer' as const,
+    accessToken,
+    refreshToken, // Trả về thêm refresh token
+    tokenType: 'Bearer',
     expiresIn: JWT_EXPIRE,
+    user: { id: user.id, email: user.email, fullName: user.fullName },
   };
-}
-
-export async function refreshToken(oldRefreshToken: string) {
-  const user = await prisma.user.findFirst({ where: { refreshToken: oldRefreshToken } });
-  if (!user) return null;
-  if (!user.isActive) return null;
-
-  const refreshToken = generateRefreshToken();
-  await prisma.user.update({ where: { id: user.id }, data: { refreshToken } });
-
-  return {
-    accessToken: generateAccessToken(user),
-    refreshToken,
-    tokenType: 'Bearer' as const,
-    expiresIn: JWT_EXPIRE,
-  };
-}
-
-export async function logoutUser(userId: string) {
-  await prisma.user.update({ where: { id: userId }, data: { refreshToken: null } });
 }
