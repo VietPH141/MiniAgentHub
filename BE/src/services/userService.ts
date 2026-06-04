@@ -1,5 +1,5 @@
 import { randomBytes, pbkdf2Sync } from 'crypto';
-import { prisma } from '../db';
+import * as userRepository from '../repositories/userRepository';
 import type { CreateUserInput, UpdateUserInput } from '../types/user';
 
 function hashPassword(password: string) {
@@ -9,67 +9,23 @@ function hashPassword(password: string) {
 }
 
 export async function getAllUsers() {
-  return prisma.user.findMany({
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      isActive: true,
-      isFirstLogin: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  return userRepository.findAllUsers();
 }
 
-export async function getUserById(id: string) {
-  return prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      isActive: true,
-      isFirstLogin: true,
-      role: true,
-      groups: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+export async function getUserById(id: number) {
+  return userRepository.findUserById(id);
 }
 
 export async function createUser(data: CreateUserInput) {
   const passwordHash = hashPassword(data.password);
-  return prisma.user.create({
-    data: {
-      email: data.email,
-      passwordHash,
-      fullName: data.fullName ?? null,
-      isActive: typeof data.isActive === 'boolean' ? data.isActive : true,
-      role: { connect: { id: data.roleId } },
-    },
-    include: { role: true },
-  });
+  return userRepository.createUserEntity({ ...data, passwordHash });
 }
 
-export async function updateUser(id: string, payload: UpdateUserInput) {
-  const data: any = {};
-
-  if (payload.email) data.email = payload.email;
-  if (payload.fullName !== undefined) data.fullName = payload.fullName;
-  if (typeof payload.isActive === 'boolean') data.isActive = payload.isActive;
-  if (payload.password) data.passwordHash = hashPassword(payload.password);
-  if (payload.roleId) data.role = { connect: { id: payload.roleId } };
-
-  return prisma.user.update({
-    where: { id },
-    data,
-    include: { role: true },
-  });
+export async function updateUser(id: number, payload: UpdateUserInput) {
+  if (payload.password) payload.password = hashPassword(payload.password);
+  return userRepository.updateUserEntity(id, payload);
 }
 
-export async function deleteUser(id: string) {
-  return prisma.user.delete({ where: { id } });
+export async function deleteUser(id: number) {
+  return userRepository.deleteUserEntity(id);
 }

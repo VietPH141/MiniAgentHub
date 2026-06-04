@@ -20,7 +20,7 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const user = await userService.getUserById(id);
+    const user = await userService.getUserById(Number(id));
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -32,16 +32,15 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function createUser(req: Request, res: Response, next: NextFunction) {
-  const { email, password, fullName, roleId, isActive } = req.body;
-  if (!email || !password || !roleId) {
-    return res.status(400).json({ error: 'email, password and roleId are required' });
+  const { email, password, fullName, isActive } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'email and password are required' });
   }
 
   const payload: CreateUserInput = {
     email,
     password,
     fullName: fullName ?? null,
-    roleId,
     isActive,
   };
 
@@ -59,18 +58,17 @@ export async function createUser(req: Request, res: Response, next: NextFunction
 
 export async function updateUser(req: Request, res: Response, next: NextFunction) {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const { email, password, fullName, roleId, isActive } = req.body;
+  const { email, password, fullName, isActive } = req.body;
 
   const payload: UpdateUserInput = {
     email,
     password,
     fullName: fullName ?? undefined,
-    roleId,
     isActive,
   };
 
   try {
-    const updated = await userService.updateUser(id, payload);
+    const updated = await userService.updateUser(Number(id), payload);
     res.json(updated);
   } catch (error: any) {
     console.error(error);
@@ -87,7 +85,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
 export async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    await userService.deleteUser(id);
+    await userService.deleteUser(Number(id));
     res.status(204).end();
   } catch (error: any) {
     console.error(error);

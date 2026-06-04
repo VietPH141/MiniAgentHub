@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import * as authController from '../controllers/authController';
+import { validate } from '../middlewares/validateMiddleware';
+import { signupSchema, loginSchema, refreshSchema } from '../schemas/authSchema';
 
-const router = Router();
+const authRouter = Router();
 
 /**
  * @openapi
@@ -22,7 +24,7 @@ const router = Router();
  *       201:
  *         description: Created
  */
-router.post('/signup', authController.signup);
+authRouter.post('/signup', validate(signupSchema), authController.signup);
 
 /**
  * @openapi
@@ -42,7 +44,7 @@ router.post('/signup', authController.signup);
  *       200:
  *         description: Success
  */
-router.post('/login', authController.login);
+authRouter.post('/login', validate(loginSchema), authController.login);
 
 /**
  * @openapi
@@ -61,6 +63,6 @@ router.post('/login', authController.login);
  *       200:
  *         description: New tokens generated
  */
-router.post('/refresh', authController.refresh);
+authRouter.post('/refresh', validate(refreshSchema), authController.refresh);
 
-export default router;
+export default authRouter;

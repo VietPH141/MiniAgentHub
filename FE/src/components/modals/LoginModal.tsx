@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { login as loginApi } from '../../api/auth';
+import { useAuth } from '../../context/AuthContext';
 
 interface Props {
   onClose: () => void;
@@ -9,14 +11,20 @@ interface Props {
 const LoginModal = ({ onClose, onSwitchSignup }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const { login } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Giả lập gọi API login
-    // const res = await authService.login({ email, password });
-    // login(res);
-    alert('Logic đăng nhập sẽ gọi API ở đây');
-    onClose();
+    setError('');
+
+    try {
+      const data = await loginApi(email, password);
+      login(data);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
+    }
   };
 
   return (
@@ -47,6 +55,7 @@ const LoginModal = ({ onClose, onSwitchSignup }: Props) => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
+        {error && <p className="text-sm text-red-400">{error}</p>}
         <button type="submit" className="w-full py-2 bg-[var(--accent)] text-white rounded font-medium mt-4">
           Continue to Dashboard
         </button>

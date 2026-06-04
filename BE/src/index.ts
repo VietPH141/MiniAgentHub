@@ -5,6 +5,7 @@ import { prisma } from './db';
 
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './swagger';
+import { errorMiddleware } from './middlewares/errorMiddleware';
 
 dotenv.config();
 
@@ -27,26 +28,21 @@ app.get('/health', (req, res) => {
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
 // API routes
-app.get('/api/roles', async (req, res) => {
-  try {
-    const roles = await prisma.role.findMany();
-    res.json(roles);
-  } catch (error) {
-    res.status(500).json({ error: 'Lỗi lấy roles' });
-  }
-});
 
 // Users CRUD routes
-import usersRouter from './routes/users';
-import authRouter from './routes/auth';
-app.use('/api/users', usersRouter);
+import userRouter from './routes/userRouter';
+import authRouter from './routes/authRouter';
+import chatRouter from './routes/chatRouter';
+import conversationRouter from './routes/conversationRouter';
+import messageRouter from './routes/messageRouter';
+app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/conversations', conversationRouter);
+app.use('/api/messages', messageRouter);
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err);
-  res.status(500).json({ error: err.message });
-});
+// Error handling middleware (phải được đặt cuối cùng)
+app.use(errorMiddleware);
 
 // Start server
 app.listen(PORT, () => {
