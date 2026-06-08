@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { prisma } from './db';
 
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './swagger';
@@ -35,16 +34,20 @@ import authRouter from './routes/authRouter';
 import chatRouter from './routes/chatRouter';
 import conversationRouter from './routes/conversationRouter';
 import messageRouter from './routes/messageRouter';
+import groupRouter from './routes/groupRouter';
+import permissionRouter from './routes/permissionRouter';
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/conversations', conversationRouter);
 app.use('/api/messages', messageRouter);
+app.use('/api/groups', groupRouter);
+app.use('/api/permissions', permissionRouter);
 
 // Error handling middleware (phải được đặt cuối cùng)
 app.use(errorMiddleware);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Backend chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Backend chạy tại http://localhost:${PORT}/swagger`);
 });

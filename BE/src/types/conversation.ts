@@ -15,3 +15,8 @@ export interface UpdateConversationInput {
     modelConfig?: string | null;
     deletedAt?: Date | null;
 }
+
+export interface DeleteConversationInput {
+    id: number;
+    permanent?: boolean; 
+}

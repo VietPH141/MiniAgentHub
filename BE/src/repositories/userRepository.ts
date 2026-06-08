@@ -14,6 +14,12 @@ export async function findUserById(id: number) {
   });
 }
 
+export async function findUserByEmail(email: string) {
+  return prisma.user.findUnique({
+    where: { email },
+  });
+}
+
 export async function createUserEntity(data: CreateUserInput & { passwordHash: string }) {
   return prisma.user.create({
     data: {
