@@ -1,30 +1,26 @@
 import type { CreateUserData, Role, UpdateUserData, User } from '../types/user';
+import { getApiBase, getAuthHeaders, handleResponse } from './client';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001/api';
-
-async function handleResponse<T>(response: Response) {
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const message = body?.error || response.statusText || 'Lỗi không xác định';
-    throw new Error(message);
-  }
-  return response.json() as Promise<T>;
-}
+const API_BASE = getApiBase();
 
 export async function getUsers() {
-  const response = await fetch(`${API_BASE}/users`);
+  const response = await fetch(`${API_BASE}/users`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse<User[]>(response);
 }
 
 export async function getRoles() {
-  const response = await fetch(`${API_BASE}/roles`);
+  const response = await fetch(`${API_BASE}/roles`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse<Role[]>(response);
 }
 
 export async function createUser(data: CreateUserData) {
   const response = await fetch(`${API_BASE}/users`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
   return handleResponse<User>(response);
@@ -33,7 +29,7 @@ export async function createUser(data: CreateUserData) {
 export async function updateUser(id: string, data: UpdateUserData) {
   const response = await fetch(`${API_BASE}/users/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
   return handleResponse<User>(response);
@@ -42,6 +38,7 @@ export async function updateUser(id: string, data: UpdateUserData) {
 export async function deleteUser(id: string) {
   const response = await fetch(`${API_BASE}/users/${id}`, {
     method: 'DELETE',
+    headers: getAuthHeaders(),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);

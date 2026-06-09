@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import type { CreatePermissionInput, UpdatePermissionInput } from '../types/permission';
 
 export async function findAllPermissions() {

@@ -23,34 +23,15 @@ userRouter.use(verifyToken);
  *     User:
  *       type: object
  *       properties:
- *         id:
- *           type: integer
- *           example: 1
- *         email:
- *           type: string
- *           format: email
- *           example: "admin@example.com"
- *         fullName:
- *           type: string
- *           example: "Nguyen Van A"
- *         phoneNumber:
- *           type: string
- *           example: "0987654321"
- *         address:
- *           type: string
- *           example: "Hà Nội, Việt Nam"
- *         isActive:
- *           type: boolean
- *           example: true
- *         theme:
- *           type: string
- *           enum: [LIGHT, DARK]
- *         language:
- *           type: string
- *           enum: [VI, EN]
- *         createdAt:
- *           type: string
- *           format: date-time
+ *         id: { type: integer, example: 1 }
+ *         email: { type: string, format: email, example: "admin@example.com" }
+ *         fullName: { type: string, example: "Nguyen Van A" }
+ *         phoneNumber: {type: string, example: "0987654321" }
+ *         address: { type: string, example: "Hà Nội, Việt Nam" }
+ *         isActive: { type: boolean, example: true }
+ *         theme: { type: string, enum: [LIGHT, DARK] }
+ *         language: { type: string, enum: [VI, EN] }
+ *         createdAt: { type: string, format: date-time }
  *     UserResponse:
  *       type: object
  *       properties:

@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import type { CreateConversationInput, UpdateConversationInput } from '../types/conversation';
 
 export async function findConversations(ownerId: number, isDeleted: boolean) {

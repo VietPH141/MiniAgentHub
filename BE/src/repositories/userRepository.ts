@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import type { CreateUserInput, UpdateUserInput } from '../types/user';
 
 export async function findAllUsers() {

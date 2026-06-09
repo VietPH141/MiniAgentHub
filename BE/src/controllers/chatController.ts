@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as aiService from '../services/aiService';
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 
 export async function sendMessage(req: Request, res: Response) {
   const { conversationId, content } = req.body;

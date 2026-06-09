@@ -1,6 +1,6 @@
 import { randomBytes, pbkdf2Sync, timingSafeEqual } from 'crypto';
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import type { AuthLoginInput, AuthSignUpInput, AuthResponse , AccessTokenPayload , RefreshTokenPayload } from '../types/auth';
 import type { User } from '@prisma/client';
 

@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import { PermissionKey } from '../constants/permissions';
 
 export async function getUserPermissions(userId: number): Promise<PermissionKey[]> {

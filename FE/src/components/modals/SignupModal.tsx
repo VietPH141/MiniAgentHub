@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { signup as signupApi } from '../../api/auth';
+import { signup as signupApi } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
 
 interface Props {

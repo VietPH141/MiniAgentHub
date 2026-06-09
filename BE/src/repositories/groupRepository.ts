@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import type { CreateGroupInput, UpdateGroupInput } from '../types/group';
 
 export async function findAllGroups() {

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import * as messageService from '../services/messageService';
 import type { GetMessageInput, CreateMessageInput, UpdateMessageInput } from '../types/message';
 

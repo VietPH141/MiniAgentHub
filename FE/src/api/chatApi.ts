@@ -1,12 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001/api';
+import { getApiBase, getAuthHeaders } from './client';
 
-function getAuthHeaders() {
-  const token = localStorage.getItem('accessToken');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
+const API_BASE = getApiBase();
 
 export const createConversation = async (title = 'New conversation') => {
   const response = await fetch(`${API_BASE}/chat/conversation`, {

@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import type { GetMessageInput, CreateMessageInput, UpdateMessageInput } from '../types/message';
 
 export async function getMessage(data: GetMessageInput) {

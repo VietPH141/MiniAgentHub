@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { prisma } from '../db';
+import { prisma } from '../config/prisma';
 import { PermissionKey } from '../constants/permissions';
 
 export const requirePermission = (requiredKey: PermissionKey) => {

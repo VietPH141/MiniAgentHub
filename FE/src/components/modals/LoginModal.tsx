@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { login as loginApi } from '../../api/auth';
+import { login as loginApi } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
 
 interface Props {
