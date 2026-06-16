@@ -39,10 +39,10 @@ import permissionRouter from './routes/permissionRouter';
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/chat', chatRouter);
-app.use('/api/conversations', conversationRouter);
-app.use('/api/messages', messageRouter);
-app.use('/api/groups', groupRouter);
-app.use('/api/permissions', permissionRouter);
+app.use('/api/conversation', conversationRouter);
+app.use('/api/message', messageRouter);
+app.use('/api/group', groupRouter);
+app.use('/api/permission', permissionRouter);
 
 // Error handling middleware (phải được đặt cuối cùng)
 app.use(errorMiddleware);

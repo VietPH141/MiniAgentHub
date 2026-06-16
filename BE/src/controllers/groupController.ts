@@ -4,8 +4,8 @@ import type { CreateGroupInput, UpdateGroupInput } from '../types/group';
 
 export async function listGroups(req: Request, res: Response, next: NextFunction) {
   try {
-    const groups = await groupService.getGroups();
-    res.json(groups);
+    const data = await groupService.getGroups();
+    res.json({ code: 200, message: 'Lấy danh sách nhóm thành công', data });
   } catch (error) {
     next(error);
   }
@@ -14,9 +14,8 @@ export async function listGroups(req: Request, res: Response, next: NextFunction
 export async function getGroup(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
-    const group = await groupService.getGroupById(id);
-    if (!group) return res.status(404).json({ error: 'Group not found' });
-    res.json(group);
+    const data = await groupService.getGroupById(id);
+    res.json({ code: 200, message: 'Lấy thông tin nhóm thành công', data });
   } catch (error) {
     next(error);
   }
@@ -24,11 +23,11 @@ export async function getGroup(req: Request, res: Response, next: NextFunction) 
 
 export async function createGroup(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = req.body as CreateGroupInput;
-    const group = await groupService.createGroup(data);
-    res.status(201).json(group);
-  } catch (error: any) {
-    if (error?.code === 'P2002') return res.status(400).json({ error: 'Group name already exists' });
+    const input = req.body as CreateGroupInput;
+    const data = await groupService.createGroup(input);
+
+    res.status(201).json({ code: 201, message: 'Tạo nhóm thành công', data });
+  } catch (error) {
     next(error);
   }
 }
@@ -36,10 +35,10 @@ export async function createGroup(req: Request, res: Response, next: NextFunctio
 export async function updateGroup(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
-    const group = await groupService.updateGroup(id, req.body as UpdateGroupInput);
-    res.json(group);
-  } catch (error: any) {
-    if (error?.code === 'P2025') return res.status(404).json({ error: 'Group not found' });
+    const data = await groupService.updateGroup(id, req.body as UpdateGroupInput);
+
+    res.json({ code: 200, message: 'Cập nhật nhóm thành công', data });
+  } catch (error) {
     next(error);
   }
 }
@@ -48,18 +47,30 @@ export async function deleteGroup(req: Request, res: Response, next: NextFunctio
   try {
     const id = Number(req.params.id);
     await groupService.deleteGroup(id);
+    // Prisma P2025 (not found) → errorMiddleware → 404
     res.status(204).send();
-  } catch (error: any) {
-    if (error?.code === 'P2025') return res.status(404).json({ error: 'Group not found' });
+  } catch (error) {
     next(error);
   }
 }
 
 export async function addUserToGroup(req: Request, res: Response, next: NextFunction) {
   try {
-    const { userId, groupId } = req.body;
-    const result = await groupService.addUserToGroup(Number(userId), Number(groupId));
-    res.status(201).json(result);
+    const { userId, groupId } = req.body as { userId: number; groupId: number };
+    const data = await groupService.addUserToGroup(userId, groupId);
+    
+    res.status(201).json({ code: 201, message: 'Thêm người dùng vào nhóm thành công', data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function removeUserFromGroup(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { userId, groupId } = req.body as { userId: number; groupId: number };
+    await groupService.removeUserFromGroup(userId, groupId);
+
+    res.json({ code: 200, message: 'Xóa người dùng khỏi nhóm thành công', data: null });
   } catch (error) {
     next(error);
   }
