@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
-import { PERMISSIONS } from '../src/constants/permissions'; 
+import { prisma } from '../src/config/prisma';
+import bcrypt from 'bcryptjs';
+import { PERMISSIONS } from '../src/constants/permissions';
 
-const prisma = new PrismaClient();
 
 async function main() {
   console.log('--- Đang bắt đầu Seeding ---');
@@ -53,7 +52,7 @@ async function main() {
 
   // 4. Tạo tài khoản Super Admin
   const adminEmail = 'admin@minihub.com';
-  const hashedPassword = await bcrypt.hash('Admin@123', 10); // Thay bằng mật khẩu bảo mật
+  const hashedPassword = bcrypt.hashSync('Admin@123', 10); // Thay bằng mật khẩu bảo mật
 
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },

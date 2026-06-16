@@ -1,19 +1,32 @@
+import { useEffect, useState } from 'react';
+import { getConversations } from '../../api/conversationApi';
+
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
 interface SidebarProps {
   onOpenModal: (type: string) => void;
+  onNewChat: () => void;
 }
 
-const Sidebar = ({ onOpenModal }: SidebarProps) => {
+const Sidebar = ({ onOpenModal, onNewChat }: SidebarProps) => {
   const { isLoggedIn, user, logout } = useAuth();
   const { toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      getConversations().then(setHistory).catch(console.error);
+    } else {
+      setHistory([]);
+    }
+  }, [isLoggedIn]);
+
 
   return (
     <div className="h-full bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col p-4">
       <div className="text-xl font-bold mb-8 text-[var(--accent)]">Mini AgentHub</div>
       
-      <button className="w-full py-2 bg-[var(--accent)] text-white rounded-md mb-4">+ New Chat</button>
+      <button onClick={onNewChat} className="w-full py-2 bg-[var(--accent)] text-white rounded-md mb-4">+ New Chat</button>
 
       <div className="flex-1 overflow-y-auto">
         <p className="text-xs text-gray-500 uppercase mb-2">History</p>

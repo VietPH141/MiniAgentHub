@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createConversation, sendChatRequest } from '../api/chatApi';
 
 export const useChatStream = () => {
   const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
+
+  const resetConversation = useCallback(() => {
+    setMessages([]);
+    setConversationId(null);
+  }, []);
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;

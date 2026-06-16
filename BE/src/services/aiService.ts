@@ -3,6 +3,8 @@ import { Response } from "express";
 // Thay URL này bằng URL base và CHAT_ID của bạn trong Flowise
 const FLOWISE_URL_RAW = process.env.FLOWISE_URL || process.env.FLOWISE_BASE_URL || "http://localhost:3001/api/v1/prediction";
 const FLOWISE_CHAT_ID = process.env.FLOWISE_CHAT_ID || process.env.CHAT_ID || process.env.chatID || process.env.CHATID;
+const FLOWISE_AUTH_HEADER_NAME = process.env.FLOWISE_AUTH_HEADER_NAME || 'Authorization';
+const FLOWISE_AUTH_HEADER_VALUE = process.env.FLOWISE_API_KEY || process.env.FLOWISE_AUTH_HEADER || '';
 
 function buildFlowiseUrl() {
   const raw = FLOWISE_URL_RAW.trim().replace(/\/$/, '');
@@ -25,9 +27,18 @@ export async function getFlowiseStream(prompt: string, res: Response) {
   try {
     const flowiseUrl = buildFlowiseUrl();
     console.log("Flowise URL:", flowiseUrl);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (FLOWISE_AUTH_HEADER_VALUE) {
+      headers[FLOWISE_AUTH_HEADER_NAME] = FLOWISE_AUTH_HEADER_VALUE;
+    }
+
+    
     const response = await fetch(flowiseUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         question: prompt,
         streaming: true, // Kích hoạt stream từ Flowise

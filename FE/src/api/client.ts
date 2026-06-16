@@ -13,6 +13,7 @@ export function getAuthHeaders() {
 }
 
 export async function handleResponse<T>(response: Response) {
+  if (response.status === 204) return {} as T; // Xử lý cho delete
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const message = body?.error || response.statusText || 'Lỗi không xác định';

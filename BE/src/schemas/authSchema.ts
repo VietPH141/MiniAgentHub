@@ -1,10 +1,11 @@
+// src/schemas/authSchema.ts
 import { z } from 'zod';
 
 export const signupSchema = z.object({
   body: z.object({
     email: z.string().email('Email không hợp lệ'),
     password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
-    fullName: z.string().min(1, 'Tên đầy đủ không được để trống').optional(),
+    fullName: z.string().optional(),
   }),
   query: z.object({}).strict(),
   params: z.object({}).strict(),

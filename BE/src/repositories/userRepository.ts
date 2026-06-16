@@ -1,46 +1,71 @@
 import { prisma } from '../config/prisma';
 import type { CreateUserInput, UpdateUserInput } from '../types/user';
 
+const USER_PUBLIC_SELECT = {
+  id: true,
+  email: true,
+  fullName: true,
+  phoneNumber: true,
+  address: true,
+  theme: true,
+  language: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 export async function findAllUsers() {
-  return prisma.user.findMany({
-    select: { id: true, email: true, fullName: true, phoneNumber: true, address: true, theme: true, language: true, isActive: true, createdAt: true, updatedAt: true },
-  });
+  return prisma.user.findMany({ select: USER_PUBLIC_SELECT });
 }
 
 export async function findUserById(id: number) {
-  return prisma.user.findUnique({
+  return prisma.user.findUniqueOrThrow({
     where: { id },
-    select: { id: true, email: true, fullName: true, phoneNumber: true, address: true, theme: true, language: true, isActive: true, userGroups: true, createdAt: true, updatedAt: true },
+    select: {
+      ...USER_PUBLIC_SELECT,
+      userGroups: {
+        select: { group: { select: { id: true, name: true } } },
+      },
+    },
   });
 }
 
 export async function findUserByEmail(email: string) {
-  return prisma.user.findUnique({
-    where: { email },
-  });
+
+  return prisma.user.findUnique({ where: { email } });
 }
 
-export async function createUserEntity(data: CreateUserInput & { passwordHash: string }) {
+export async function createUserEntity(data: CreateUserInput) {
+
   return prisma.user.create({
     data: {
       email: data.email,
       passwordHash: data.passwordHash,
       fullName: data.fullName,
-      isActive: data.isActive,
+      phoneNumber: data.phoneNumber,
+      address: data.address,
+      isActive: data.isActive ?? true,
     },
+    select: USER_PUBLIC_SELECT,
   });
 }
 
 export async function updateUserEntity(id: number, data: UpdateUserInput) {
-  const payload: any = {};
-  if (data.email) payload.email = data.email;
-  if (data.fullName !== undefined) payload.fullName = data.fullName;
-  if (typeof data.isActive === 'boolean') payload.isActive = data.isActive;
-  if (data.password) payload.passwordHash = data.password;
+  const payload: Partial<typeof data> = {};
+
+  if (data.email       !== undefined) payload.email       = data.email;
+  if (data.fullName    !== undefined) payload.fullName    = data.fullName;
+  if (data.phoneNumber !== undefined) payload.phoneNumber = data.phoneNumber;
+  if (data.address     !== undefined) payload.address     = data.address;
+  if (data.theme       !== undefined) payload.theme       = data.theme;
+  if (data.language    !== undefined) payload.language    = data.language;
+  if (data.isActive    !== undefined) payload.isActive    = data.isActive;
+  if (data.passwordHash !== undefined) payload.passwordHash = data.passwordHash;
 
   return prisma.user.update({
     where: { id },
     data: payload,
+    select: USER_PUBLIC_SELECT,
   });
 }
 

@@ -1,97 +1,66 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService';
-import type { CreateUserInput, UpdateUserInput } from '../types/user';
-
-function formatErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
-}
+import type { CreateUserDto, UpdateUserDto } from '../types/user'; // ← Dto, not Input
 
 export async function listUsers(req: Request, res: Response, next: NextFunction) {
   try {
     const users = await userService.getAllUsers();
-    res.json(users);
+    res.json({ code: 200, message: 'Thành công', data: users });
   } catch (error) {
-    console.error(error);
     next(error);
   }
 }
 
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const user = await userService.getUserById(Number(id));
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json(user);
-  } catch (error: unknown) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch user' });
+    const user = await userService.getUserById(Number(req.params.id));
+    res.json({ code: 200, message: 'Thành công', data: user });
+  } catch (error) {
+    next(error);
   }
 }
 
 export async function createUser(req: Request, res: Response, next: NextFunction) {
-  const { email, password, fullName, isActive } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: 'email and password are required' });
-  }
-
-  const payload: CreateUserInput = {
-    email,
-    password,
-    fullName: fullName ?? null,
-    isActive,
-  };
-
   try {
-    const newUser = await userService.createUser(payload);
-    res.status(201).json(newUser);
-  } catch (error: any) {
-    console.error(error);
-    if (error?.code === 'P2002') {
-      return res.status(400).json({ error: 'Email already exists' });
-    }
-    res.status(500).json({ error: formatErrorMessage(error) || 'Failed to create user' });
+    const dto: CreateUserDto = {
+      email:       req.body.email,
+      password:    req.body.password,
+      fullName:    req.body.fullName  ?? null,
+      phoneNumber: req.body.phoneNumber ?? null,
+      address:     req.body.address   ?? null,
+      isActive:    req.body.isActive,
+    };
+    const newUser = await userService.createUser(dto);
+    res.status(201).json({ code: 201, message: 'Tạo người dùng thành công', data: newUser });
+  } catch (error) {
+    next(error);
   }
 }
 
 export async function updateUser(req: Request, res: Response, next: NextFunction) {
-  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const { email, password, fullName, isActive } = req.body;
-
-  const payload: UpdateUserInput = {
-    email,
-    password,
-    fullName: fullName ?? undefined,
-    isActive,
-  };
-
   try {
-    const updated = await userService.updateUser(Number(id), payload);
-    res.json(updated);
-  } catch (error: any) {
-    console.error(error);
-    if (error?.code === 'P2025') {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    if (error?.code === 'P2002') {
-      return res.status(400).json({ error: 'Email already exists' });
-    }
-    res.status(500).json({ error: formatErrorMessage(error) || 'Failed to update user' });
+    const dto: UpdateUserDto = {
+      email:       req.body.email,
+      password:    req.body.password,
+      fullName:    req.body.fullName,
+      phoneNumber: req.body.phoneNumber,
+      address:     req.body.address,
+      theme:       req.body.theme,
+      language:    req.body.language,
+      isActive:    req.body.isActive,
+    };
+    const updated = await userService.updateUser(Number(req.params.id), dto);
+    res.json({ code: 200, message: 'Cập nhật thành công', data: updated });
+  } catch (error) {
+    next(error);
   }
 }
 
 export async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    await userService.deleteUser(Number(id));
-    res.status(204).end();
-  } catch (error: any) {
-    console.error(error);
-    if (error?.code === 'P2025') {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.status(500).json({ error: formatErrorMessage(error) || 'Failed to delete user' });
+    await userService.deleteUser(Number(req.params.id));
+    res.json({ code: 200, message: 'Xóa người dùng thành công', data: null });
+  } catch (error) {
+    next(error);
   }
 }

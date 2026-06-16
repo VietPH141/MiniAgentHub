@@ -8,8 +8,14 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
 
   // 1. Chuyển đổi các loại lỗi lạ về ApiError để xử lý thống nhất
   if (!(error instanceof ApiError)) {
-    let statusCode = error.statusCode || (error instanceof Prisma.PrismaClientKnownRequestError || error instanceof ZodError ? 400 : 500);
-    let message = error.message || 'Internal Server Error';
+    let statusCode =
+      error?.statusCode ||
+      (error instanceof Prisma.PrismaClientKnownRequestError ||
+      error instanceof ZodError
+        ? 400
+        : 500);
+
+    let message = error?.message || 'Internal Server Error';
     
     // Xử lý lỗi Database từ Prisma
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -19,7 +25,11 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
     
     // Xử lý lỗi Validation từ Zod
     if (error instanceof ZodError) {
-      message = (error as any).errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(' | ');
+      message = error.issues?.length
+        ? error.issues
+            .map(e => `${e.path.join('.')}: ${e.message}`)
+            .join(' | ')
+        : error.message;
     }
 
     // Xử lý lỗi Token JWT

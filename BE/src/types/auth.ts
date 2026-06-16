@@ -29,3 +29,17 @@ export interface AccessTokenPayload {
 export interface RefreshTokenPayload {
   sub: string;
 }
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  permissions: string[];
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
+    }
+  }
+}

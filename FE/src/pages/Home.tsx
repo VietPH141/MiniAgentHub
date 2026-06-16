@@ -11,6 +11,7 @@ import GroupModal from '../components/modals/GroupModal';
 const Home = () => {
   // State quản lý modal nào đang hiển thị: 'LOGIN' | 'SIGNUP' | 'SETTINGS' | 'GROUPS' | null
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [chatKey, setChatKey] = useState(0);
 
   // Hàm tiện ích để đóng modal
   const closeModal = () => setActiveModal(null);
@@ -35,12 +36,12 @@ const Home = () => {
       
       {/* 1. THANH ĐIỀU KHIỂN BÊN TRÁI (Tỷ lệ ~ 1/7) */}
       <div className="w-[14.28%] min-w-[240px] h-full">
-        <Sidebar onOpenModal={(type) => setActiveModal(type)} />
+        <Sidebar onOpenModal={(type) => setActiveModal(type)} onNewChat={() => setChatKey((prev) => prev + 1)} />
       </div>
 
       {/* 2. GIAO DIỆN CHAT BÊN PHẢI (Tỷ lệ ~ 6/7) */}
       <div className="flex-1 h-full relative">
-        <ChatArea onOpenAuth={() => setActiveModal('LOGIN')} />
+        <ChatArea onOpenAuth={() => setActiveModal('LOGIN')} chatKey={chatKey} />
       </div>
 
       {/* 3. LỚP PHỦ POPUP (Chỉ hiển thị khi activeModal khác null) */}
