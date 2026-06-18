@@ -1,22 +1,22 @@
-export interface GetConversationsInput {
-    ownerId: number;
-    deletedAt: Date | null;
-}
-
 export interface CreateConversationInput {
-    ownerId: number;
-    title: string;
-    modelConfig?: string | null;
-    deletedAt: Date | null;
+  ownerId: number;
+  title?: string | null;
+  modelConfig?: string | null;
 }
 
 export interface UpdateConversationInput {
-    title?: string;
-    modelConfig?: string | null;
-    deletedAt?: Date | null;
+  title?: string | null;
+  modelConfig?: string | null;
 }
 
-export interface DeleteConversationInput {
-    id: number;
-    permanent?: boolean; 
+export interface ConversationResponse {
+  id: number;
+  ownerId: number;
+  title: string | null;
+  modelConfig: string | null;
+  chatId: string | null;
+  sessionId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
 }

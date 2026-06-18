@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as conversationController from '../controllers/conversationController';
+import * as controller from '../controllers/conversationController';
 import { verifyToken } from '../middlewares/authMiddleware';
 import { requirePermission } from '../middlewares/rbacMiddleware';
 import { validate } from '../middlewares/validateMiddleware';
@@ -7,6 +7,7 @@ import * as schema from '../schemas/conversationSchema';
 import { PERMISSIONS } from '../constants/permissions';
 
 const conversationRouter = Router();
+
 conversationRouter.use(verifyToken);
 
 /**
@@ -16,13 +17,15 @@ conversationRouter.use(verifyToken);
  *     Conversation:
  *       type: object
  *       properties:
- *         id: { type: integer, example: 10 }
- *         ownerId: { type: integer, example: 1 }
- *         title: { type: string, example: "Tư vấn lập trình Nodejs" }
- *         modelConfig: { type: string, example: "gpt-4" }
- *         createdAt: { type: string, format: date-time }
- *         updatedAt: { type: string, format: date-time }
- *         deletedAt: { type: string, format: date-time, nullable: true }
+ *         id:          { type: integer,  example: 10 }
+ *         ownerId:     { type: integer,  example: 1 }
+ *         title:       { type: string,   example: "Tư vấn lập trình Node.js" }
+ *         modelConfig: { type: string,   example: "gpt-4o" }
+ *         chatId:      { type: string,   format: uuid, description: "Flowise chat thread ID" }
+ *         sessionId:   { type: string,   format: uuid, description: "Flowise session / memory scope ID" }
+ *         createdAt:   { type: string,   format: date-time }
+ *         updatedAt:   { type: string,   format: date-time }
+ *         deletedAt:   { type: string,   format: date-time, nullable: true }
  */
 
 /**
@@ -31,24 +34,51 @@ conversationRouter.use(verifyToken);
  *   get:
  *     tags: [Conversations]
  *     summary: Lấy danh sách hội thoại
- *     description: Có thể lấy danh sách hiện tại hoặc trong thùng rác thông qua query isTrash
  *     parameters:
  *       - in: query
  *         name: isTrash
  *         schema: { type: boolean }
- *         example: false
+ *         description: true → thùng rác, false (default) → đang hoạt động
  *     responses:
  *       200:
  *         description: Thành công
  *         content:
  *           application/json:
- *             schema: { type: array, items: { $ref: '#/components/schemas/Conversation' } }
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:    { type: integer, example: 200 }
+ *                 message: { type: string }
+ *                 data:    { type: array, items: { $ref: '#/components/schemas/Conversation' } }
  */
 conversationRouter.get(
   '/',
   requirePermission(PERMISSIONS.CONV_R),
   validate(schema.getConversationsSchema),
-  conversationController.listConversations
+  controller.listConversations
+);
+
+/**
+ * @openapi
+ * /api/conversation/{id}:
+ *   get:
+ *     tags: [Conversations]
+ *     summary: Lấy chi tiết một hội thoại
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: Thành công }
+ *       403: { description: Không có quyền }
+ *       404: { description: Không tìm thấy }
+ */
+conversationRouter.get(
+  '/:id',
+  requirePermission(PERMISSIONS.CONV_R),
+  validate(schema.conversationIdSchema),
+  controller.getConversation
 );
 
 /**
@@ -56,25 +86,23 @@ conversationRouter.get(
  * /api/conversation:
  *   post:
  *     tags: [Conversations]
- *     summary: Tạo hội thoại mới
+ *     summary: Tạo hội thoại mới (tự sinh Flowise chatId & sessionId)
  *     requestBody:
- *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
  *             properties:
- *               title: { type: string }
+ *               title:       { type: string, maxLength: 200 }
  *               modelConfig: { type: string }
  *     responses:
- *       201:
- *         description: Tạo thành công
+ *       201: { description: Tạo thành công }
  */
 conversationRouter.post(
   '/',
   requirePermission(PERMISSIONS.CONV_C),
   validate(schema.createConversationSchema),
-  conversationController.createConversation
+  controller.createConversation
 );
 
 /**
@@ -82,7 +110,7 @@ conversationRouter.post(
  * /api/conversation/{id}:
  *   patch:
  *     tags: [Conversations]
- *     summary: Cập nhật hội thoại
+ *     summary: Cập nhật tiêu đề hoặc modelConfig
  *     parameters:
  *       - in: path
  *         name: id
@@ -94,15 +122,18 @@ conversationRouter.post(
  *           schema:
  *             type: object
  *             properties:
- *               title: { type: string }
+ *               title:       { type: string }
+ *               modelConfig: { type: string }
  *     responses:
  *       200: { description: Cập nhật thành công }
+ *       403: { description: Không phải chủ sở hữu }
+ *       404: { description: Không tìm thấy hoặc đã bị xóa }
  */
 conversationRouter.patch(
   '/:id',
   requirePermission(PERMISSIONS.CONV_U),
   validate(schema.updateConversationSchema),
-  conversationController.updateConversation
+  controller.updateConversation
 );
 
 /**
@@ -123,7 +154,7 @@ conversationRouter.post(
   '/:id/restore',
   requirePermission(PERMISSIONS.CONV_U),
   validate(schema.conversationIdSchema),
-  conversationController.restoreConversation
+  controller.restoreConversation
 );
 
 /**
@@ -131,24 +162,41 @@ conversationRouter.post(
  * /api/conversation/{id}:
  *   delete:
  *     tags: [Conversations]
- *     summary: Xóa hội thoại
- *     description: Mặc định là xóa tạm (vào thùng rác). Dùng permanent=true để xóa vĩnh viễn.
+ *     summary: Xóa mềm hội thoại (chuyển vào thùng rác)
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema: { type: integer }
- *       - in: query
- *         name: permanent
- *         schema: { type: boolean }
  *     responses:
- *       204: { description: Xóa thành công }
+ *       204: { description: Đã xóa vào thùng rác }
  */
 conversationRouter.delete(
   '/:id',
   requirePermission(PERMISSIONS.CONV_D),
   validate(schema.deleteConversationSchema),
-  conversationController.deleteConversation
+  controller.softDeleteConversation
+);
+
+/**
+ * @openapi
+ * /api/conversation/{id}/permanent:
+ *   delete:
+ *     tags: [Conversations]
+ *     summary: Xóa vĩnh viễn hội thoại khỏi cơ sở dữ liệu
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       204: { description: Đã xóa vĩnh viễn }
+ */
+conversationRouter.delete(
+  '/:id/permanent',
+  requirePermission(PERMISSIONS.CONV_D),
+  validate(schema.conversationIdSchema),
+  controller.hardDeleteConversation
 );
 
 export default conversationRouter;

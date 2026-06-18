@@ -2,22 +2,44 @@ import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../utils/apiError';
 import * as conversationService from '../services/conversationService';
 
-// Định nghĩa Interface để ép kiểu cho req.query sau khi đã validate/transform
-interface ConversationQuery {
-  isTrash?: boolean;
-  permanent?: boolean;
+const uid = (req: Request): number => req.user!.id;
+
+async function assertOwnership(
+  conversationId: number,
+  userId: number,
+  { requireActive = true }: { requireActive?: boolean } = {}
+) {
+  const conv = await conversationService.getConversationById(conversationId);
+
+  if (requireActive && conv.deletedAt) {
+    throw new ApiError(404, 'Hội thoại không tồn tại hoặc đã bị xóa');
+  }
+  if (conv.ownerId !== userId) {
+    throw new ApiError(403, 'Bạn không có quyền thực hiện thao tác này');
+  }
+  return conv;
 }
 
 export async function listConversations(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = (req as any).user.id;
     
-    // Ép kiểu req.query về interface chúng ta mong muốn
-    const query = req.query as unknown as ConversationQuery;
-    const isTrash = query.isTrash === true; 
+    const isTrash = req.query.isTrash === 'true'; 
 
     const data = await conversationService.getConversations(userId, isTrash);
-    res.json(data);
+    
+    res.json({ code: 200, message: 'Lấy danh sách thành công', data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getConversation(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const conv = await assertOwnership(id, uid(req));
+
+    res.json({ code: 200, message: 'Lấy chi tiết hội thoại thành công', data: conv });
   } catch (error) {
     next(error);
   }
@@ -25,12 +47,13 @@ export async function listConversations(req: Request, res: Response, next: NextF
 
 export async function createConversation(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = (req as any).user.id;
-    const result = await conversationService.createConversation({
-      ...req.body,
-      ownerId: userId
+    const data = await conversationService.createConversation({
+      ownerId: uid(req),
+      title: req.body.title ?? null,
+      modelConfig: req.body.modelConfig ?? null,
     });
-    res.status(201).json(result);
+
+    res.status(201).json({ code: 201, message: 'Tạo hội thoại thành công', data });
   } catch (error) {
     next(error);
   }
@@ -38,15 +61,15 @@ export async function createConversation(req: Request, res: Response, next: Next
 
 export async function updateConversation(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = (req as any).user.id;
     const id = Number(req.params.id);
+    await assertOwnership(id, uid(req)); // ensures active + owner
 
-    const existing = await conversationService.getConversationById(id);
-    if (!existing || existing.deletedAt) throw new ApiError(404, 'Hội thoại không tồn tại hoặc đã bị xóa tạm');
-    if (existing.ownerId !== userId) throw new ApiError(403, 'Không có quyền');
+    const data = await conversationService.updateConversation(id, {
+      title: req.body.title,
+      modelConfig: req.body.modelConfig,
+    });
 
-    const result = await conversationService.updateConversation(id, req.body);
-    res.json(result);
+    res.json({ code: 200, message: 'Cập nhật hội thoại thành công', data });
   } catch (error) {
     next(error);
   }
@@ -54,34 +77,34 @@ export async function updateConversation(req: Request, res: Response, next: Next
 
 export async function restoreConversation(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = (req as any).user.id;
     const id = Number(req.params.id);
+    await assertOwnership(id, uid(req), { requireActive: false });
 
-    const existing = await conversationService.getConversationById(id);
-    if (!existing) throw new ApiError(404, 'Không tìm thấy hội thoại');
-    if (existing.ownerId !== userId) throw new ApiError(403, 'Không có quyền');
-
-    const result = await conversationService.restoreConversation(id);
-    res.json(result);
+    const data = await conversationService.restoreConversation(id);
+    res.json({ code: 200, message: 'Khôi phục hội thoại thành công', data });
   } catch (error) {
     next(error);
   }
 }
 
-export async function deleteConversation(req: Request, res: Response, next: NextFunction) {
+export async function softDeleteConversation(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = (req as any).user.id;
     const id = Number(req.params.id);
+    await assertOwnership(id, uid(req));
 
-    // Ép kiểu tương tự cho permanent
-    const query = req.query as unknown as ConversationQuery;
-    const permanent = query.permanent === true;
+    await conversationService.softDeleteConversation(id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+}
 
-    const existing = await conversationService.getConversationById(id);
-    if (!existing) throw new ApiError(404, 'Hội thoại không tồn tại');
-    if (existing.ownerId !== userId) throw new ApiError(403, 'Không có quyền');
+export async function hardDeleteConversation(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    await assertOwnership(id, uid(req), { requireActive: false });
 
-    await conversationService.deleteConversation(id, permanent);
+    await conversationService.hardDeleteConversation(id);
     res.status(204).end();
   } catch (error) {
     next(error);

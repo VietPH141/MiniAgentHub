@@ -17,13 +17,17 @@ export async function findConversationById(id: number) {
   });
 }
 
-export async function createConversation(data: CreateConversationInput) {
+export async function createConversation(
+  data: CreateConversationInput & { chatId: string; sessionId: string }
+) {
   return prisma.conversation.create({
     data: {
       ownerId: data.ownerId,
-      title: data.title,
-      modelConfig: data.modelConfig,
-      deletedAt: null, // Luôn null khi tạo mới
+      title: data.title ?? null,
+      modelConfig: data.modelConfig ?? null,
+      chatId: data.chatId,
+      sessionId: data.sessionId,
+      deletedAt: null, // always null on creation
     },
   });
 }
@@ -32,8 +36,8 @@ export async function updateConversation(id: number, data: UpdateConversationInp
   return prisma.conversation.update({
     where: { id },
     data: {
-      title: data.title,
-      modelConfig: data.modelConfig,
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.modelConfig !== undefined && { modelConfig: data.modelConfig }),
     },
   });
 }
